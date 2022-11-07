@@ -1,13 +1,16 @@
 from django.urls import include, path
-from rest_framework.routers import DefaultRouter
 
-from .views import ConfigViewSet
+# from .views import ConfigViewSet
+from .views import APIConfig
 
-router = DefaultRouter()
+# from rest_framework.routers import DefaultRouter
 
-router.register("config", ConfigViewSet)
+# router = DefaultRouter()
+
+# router.register("config", ConfigViewSet)
 
 
 urlpatterns = [
-    path("", include(router.urls)),
+    # path("", include(router.urls)),
+    path("config/", APIConfig.as_view()),
 ]
