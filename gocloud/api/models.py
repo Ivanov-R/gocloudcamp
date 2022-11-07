@@ -7,19 +7,18 @@ from django.db import models
 # User = get_user_model()
 
 
-class Data(models.Model):
-    key1 = models.CharField(max_length=150)
-    key2 = models.CharField(max_length=150)
-
-    def __str__(self) -> str:
-        return self.name
-
-
 class Config(models.Model):
-    service = models.CharField(max_length=150, unique=True)
-    data = models.ForeignKey(
-        Data, on_delete=models.CASCADE, related_name="data_keys")
+    service = models.CharField(max_length=150)
     version = models.DecimalField(max_digits=3, decimal_places=1)
 
     def __str__(self) -> str:
         return self.service
+
+
+class Key(models.Model):
+    key = models.CharField(max_length=150)
+    value = models.CharField(max_length=150)
+    config = models.ForeignKey(Config, on_delete=models.CASCADE)
+
+    def __str__(self) -> str:
+        return self.key
