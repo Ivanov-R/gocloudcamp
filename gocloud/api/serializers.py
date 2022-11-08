@@ -1,6 +1,10 @@
 # from django.core.validators import MinValueValidator
+from decimal import Decimal
+
+from django.shortcuts import get_object_or_404
 from django_filters import rest_framework as filter
 from rest_framework import serializers
+from rest_framework.validators import UniqueTogetherValidator
 
 from .models import Config, ConfigKeyValue, KeyValue
 
@@ -49,10 +53,6 @@ class ConfigPostSerializer(serializers.ModelSerializer):
     class Meta:
         model = Config
         fields = ('service', 'data')
-        # validators = [
-        #     UniqueTogetherValidator(
-        #         queryset=Favorite.objects.all(),
-        #         fields=("user", "favorite_recipe"))]
 
     def create(self, validated_data):
         print(f'validated_data={validated_data}')
@@ -61,7 +61,7 @@ class ConfigPostSerializer(serializers.ModelSerializer):
         config = Config.objects.create(**validated_data)
         print(config)
         for key_value in data:
-            new_key_value = KeyValue.objects.create(
+            new_key_value, _ = KeyValue.objects.get_or_create(
                 key=key_value['key'], value=key_value['value'],)
             ConfigKeyValue.objects.create(
                 config=config, key_value=new_key_value)
@@ -73,13 +73,24 @@ class ConfigPostSerializer(serializers.ModelSerializer):
         data = validated_data.pop('data')
         config = instance
         for key_value in data:
-            try:
-                new_key_value = KeyValue.objects.get(key=key_value['key']).update(
-                    key=key_value['key'], value=key_value['value'],)
-            except:
-                new_key_value = KeyValue.objects.create(
-                    key=key_value['key'], value=key_value['value'],)
-            ConfigKeyValue.objects.update(
-                config=config, key_value=new_key_value)
-            config.update(version=version+0.1)
+            new_key_value = KeyValue.objects.filter(
+                key=key_value['key'], value=key_value['value'])
+            if not new_key_value.exists() or ConfigKeyValue.objects.filter(
+                    config=config, key_value=new_key_value).exists:
+                config = Config.objects.create(
+                    service=config.service, version=config.version+Decimal('0.1'))
+                break
+        for key_value in data:
+            # print(config.key_values.all())
+
+            new_key_value, _ = KeyValue.objects.get_or_create(
+                key=key_value['key'], value=key_value['value'])
+            if not ConfigKeyValue.objects.filter(config=config, key_value=new_key_value).exists():
+                print(f'nkv={new_key_value}')
+                # new_key_value = KeyValue.objects.create(
+                #     key=key_value['key'], value=key_value['value'],)
+                print(type(config.version))
+                ConfigKeyValue.objects.create(
+                    config=config, key_value=new_key_value)
+                # config.update(version=version+0.1)
         return config
