@@ -1,10 +1,4 @@
-# from django.contrib.auth import get_user_model
-# from django.core.validators import MinValueValidator
 from django.db import models
-
-# from .models import User
-
-# User = get_user_model()
 
 
 class KeyValue(models.Model):
@@ -30,11 +24,6 @@ class Config(models.Model):
 
     class Meta:
         ordering = ["-service"]
-        # constraints = [
-        #     models.UniqueConstraint(
-        #         fields=["service", "version"], name="unique version"
-        #     )
-        # ]
 
     def __str__(self) -> str:
         return f'{self.service} {self.version}'

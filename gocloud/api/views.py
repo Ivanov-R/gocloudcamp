@@ -1,114 +1,98 @@
-from django.db.models import Max
-from django.http import HttpResponse
-from django.shortcuts import get_object_or_404, render
-from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import filters, status, viewsets
-from rest_framework.decorators import action, api_view
+from django.shortcuts import get_object_or_404
+from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-# from .filters import RecipeFilter
 from .models import Config
 from .serializers import ConfigGetSerializer, ConfigPostSerializer
-
-# class ConfigViewSet(viewsets.ModelViewSet):
-#     queryset = Config.objects.all()
-#     serializer_class = ConfigGetSerializer
-#     filter_backends = (DjangoFilterBackend,)
-#     filterset_fields = ('service', 'version')
 
 
 class APIConfig(APIView):
     def get(self, request):
         data = request.query_params
-        # print(f'req_data={data}')
-        if 'version' in data.keys():
-            config = get_object_or_404(Config,
-                                       service=data['service'], version=data['version'])
+        if "version" in data.keys():
+            config = get_object_or_404(
+                Config, service=data["service"], version=data["version"]
+            )
             serializer = ConfigGetSerializer(config)
             return Response(serializer.data["key_values"])
-        configs = Config.objects.filter(service=data['service'])
+        configs = Config.objects.filter(service=data["service"])
         if configs.exists():
-            print(f'configs={configs}')
-            config = configs.order_by('-version')[0]
-            # print(f'config={config}')
+            config = configs.order_by("-version")[0]
             serializer = ConfigGetSerializer(config)
             return Response(serializer.data["key_values"])
-        return Response('Такого конфига не существует! Воспользуйтесь методом Post, чтобы создать конфиг для этого приложения', status=status.HTTP_404_NOT_FOUND)
+        return Response(
+            "Такого конфига не существует! Воспользуйтесь методом Post, чтобы"
+            " создать конфиг для этого приложения",
+            status=status.HTTP_404_NOT_FOUND,
+        )
 
     def post(self, request):
-        print(f'req_data={request.data}')
         data = request.data
-        if 'service' in data.keys():
-            if Config.objects.filter(service=data['service']).exists():
-                return Response('Такой конфиг уже существует! Воспользуйтесь методом Put, чтобы добавить новую версию для этого приложения', status=status.HTTP_400_BAD_REQUEST)
-        keys_values_data = data['data']
-        # print(f'keys_data={keys_data}')
+        if "service" in data.keys():
+            if Config.objects.filter(service=data["service"]).exists():
+                return Response(
+                    "Такой конфиг уже существует! Воспользуйтесь методом Put,"
+                    " чтобы добавить новую версию для этого приложения",
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+        keys_values_data = data["data"]
         new_keys_values_data = []
-        # print(f'keys_data.keys={keys_data[0].keys()}')
-        # print(f'keys_data.values={keys_data[0].values()}')
         for i in range(len(keys_values_data)):
-            # print(i)
-            # print(list(keys_data[i].keys()))
-            # print(list(keys_data[i].keys())[0])
-            # print(list(keys_data[i].values())[0])
-            new_dict = {'key': list(keys_values_data[i].keys(
-            ))[0], 'value': list(keys_values_data[i].values())[0]}
-            # print(new_dict)
+            new_dict = {
+                "key": list(keys_values_data[i].keys())[0],
+                "value": list(keys_values_data[i].values())[0],
+            }
             new_keys_values_data.append(new_dict)
-        print(f'new_keys_values_data={new_keys_values_data}')
-        # print(type(new_keys_data))
-        # print(type(data['keys']))
-        data['data'] = new_keys_values_data
-        print(f'data={data}')
+        data["data"] = new_keys_values_data
         serializer = ConfigPostSerializer(data=data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-        print(f'ser_err={serializer.errors}')
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def put(self, request):
-        # print(f'req_data={request.data}')
         data = request.data
-        configs = Config.objects.filter(service=data['service'])
+        configs = Config.objects.filter(service=data["service"])
         if configs.exists():
-            # print(f'configs={configs}')
-            config = configs.order_by('-version')[0]
-            # serializer = CatSerializer(cat, data=request.data)
-            keys_values_data = data['data']
-            # print(f'keys_data={keys_data}')
+            config = configs.order_by("-version")[0]
+            keys_values_data = data["data"]
             new_keys_values_data = []
-            # print(f'keys_data.keys={keys_data[0].keys()}')
-            # print(f'keys_data.values={keys_data[0].values()}')
             for i in range(len(keys_values_data)):
-                # print(i)
-                # print(list(keys_data[i].keys()))
-                # print(list(keys_data[i].keys())[0])
-                # print(list(keys_data[i].values())[0])
-                new_dict = {'key': list(keys_values_data[i].keys(
-                ))[0], 'value': list(keys_values_data[i].values())[0]}
-                # print(new_dict)
+                new_dict = {
+                    "key": list(keys_values_data[i].keys())[0],
+                    "value": list(keys_values_data[i].values())[0],
+                }
                 new_keys_values_data.append(new_dict)
-            print(f'new_keys_values_data={new_keys_values_data}')
-            # print(type(new_keys_data))
-            # print(type(data['keys']))
-            data['data'] = new_keys_values_data
-            print(f'data={data}')
+            data["data"] = new_keys_values_data
             serializer = ConfigPostSerializer(config, data=data)
             if serializer.is_valid():
                 serializer.save()
-                return Response(serializer.data, status=status.HTTP_201_CREATED)
-            print(f'ser_err={serializer.errors}')
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        return Response('Такого конфига не существует! Воспользуйтесь методом Post, чтобы создать конфиг для этого приложения', status=status.HTTP_404_NOT_FOUND)
+                return Response(
+                    serializer.data, status=status.HTTP_201_CREATED
+                )
+            return Response(
+                serializer.errors, status=status.HTTP_400_BAD_REQUEST
+            )
+        return Response(
+            "Такого конфига не существует! Воспользуйтесь методом Post, чтобы"
+            " создать конфиг для этого приложения",
+            status=status.HTTP_404_NOT_FOUND,
+        )
 
     def delete(self, request):
         data = request.query_params
-        print(f'data={data}')
-        if data['service'] == "":
+        if data["service"] == "":
             config = get_object_or_404(
-                Config, service="", version=data['version'])
+                Config, service="", version=data["version"]
+            )
             config.delete()
-            return Response('Версия конфига успешно удалена', status=status.HTTP_204_NO_CONTENT)
-        return Response('Нельзя удалять конфиг, который используется каким-либо приложением!', status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                "Версия конфига успешно удалена",
+                status=status.HTTP_204_NO_CONTENT,
+            )
+        return Response(
+            "Нельзя удалять конфиг, который используется каким-либо"
+            " приложением!",
+            status=status.HTTP_400_BAD_REQUEST,
+        )
