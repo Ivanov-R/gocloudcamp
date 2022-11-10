@@ -1,5 +1,3 @@
-from decimal import Decimal
-
 from rest_framework import serializers
 
 from .models import Config, ConfigKeyValue, KeyValue
@@ -21,7 +19,6 @@ class ConfigGetSerializer(serializers.ModelSerializer):
 
     def get_key_values(self, obj):
         key_values = KeyValue.objects.filter(config=obj)
-        print(key_values)
         data = {}
         for key_value in key_values:
             data[key_value.__dict__['key']] = key_value.__dict__['value']
@@ -36,11 +33,8 @@ class ConfigPostSerializer(serializers.ModelSerializer):
         fields = ('service', 'data')
 
     def create(self, validated_data):
-        print(f'validated_data={validated_data}')
         data = validated_data.pop('data')
-        print(data)
         config = Config.objects.create(**validated_data)
-        print(config)
         for key_value in data:
             new_key_value, _ = KeyValue.objects.get_or_create(
                 key=key_value['key'], value=key_value['value'],)
@@ -54,19 +48,17 @@ class ConfigPostSerializer(serializers.ModelSerializer):
         for key_value in data:
             new_key_value = KeyValue.objects.filter(
                 key=key_value['key'], value=key_value['value'])
-            if not new_key_value.exists() or ConfigKeyValue.objects.filter(
-                    config=config, key_value=new_key_value).exists:
-                config = Config.objects.create(
-                    service=config.service, version=config.version +
-                    Decimal('0.1'))
+            if not new_key_value or not ConfigKeyValue.objects.filter(
+                    config=config, key_value=new_key_value[0]):
+                config, _ = Config.objects.get_or_create(
+                    service=config.service, version=(config.version +
+                                                     int('1')))
                 break
         for key_value in data:
             new_key_value, _ = KeyValue.objects.get_or_create(
                 key=key_value['key'], value=key_value['value'])
             if not ConfigKeyValue.objects.filter(
                     config=config, key_value=new_key_value).exists():
-                print(f'nkv={new_key_value}')
-                print(type(config.version))
                 ConfigKeyValue.objects.create(
                     config=config, key_value=new_key_value)
         return config

@@ -3,7 +3,7 @@ from django.db import models
 
 class KeyValue(models.Model):
     key = models.CharField(max_length=150)
-    value = models.CharField(max_length=150)
+    value = models.TextField()
 
     class Meta:
         ordering = ["-key"]
@@ -18,9 +18,9 @@ class KeyValue(models.Model):
 
 
 class Config(models.Model):
-    service = models.CharField(max_length=150, null=True, blank=True,)
+    service = models.CharField(max_length=150)
     data = models.ManyToManyField(KeyValue, through='ConfigKeyValue')
-    version = models.DecimalField(max_digits=3, decimal_places=1, default=0.1)
+    version = models.IntegerField(default=1)
 
     class Meta:
         ordering = ["-service"]
